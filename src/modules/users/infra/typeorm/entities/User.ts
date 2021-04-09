@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn } from 'typeorm';
 @Entity('usuario')
 class User {
     @PrimaryGeneratedColumn()
-    usr_id: number;
+    usr_id: string;
 
     @Column()
     usr_data_cadastro: Date;
