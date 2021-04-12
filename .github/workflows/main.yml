@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2.1.5
+        with:
+          node-version: 14.x
+          
+      # Instalar as dependencias NPM/Yarn
+      - name: Install Dependencies
+        run: yarn
+        
+      # Executar a build
+      - name: Run build
+        run: yarn build
+        
+      # Copiar código para a Digital Ocean
+      - name: Copy dist to Digital Ocean
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          source: ".,!node_modules"
+          target: "~/app/Backend-Site-Titanium_dev"
+          
+      # Install dependencies on Digital Ocean for Production
+      - name: Run production scripts
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            cd ~/app/Backend-Site-Titanium_dev
+            yarn
+            ./node_modules/.bin/typeorm migration:run
+            pm2 restart titaniumdev-api
